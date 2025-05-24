@@ -35,15 +35,10 @@ window.axios.defaults.headers.common['X-Requested-With'] = 'XMLHttpRequest';
 //     enabledTransports: ['ws', 'wss'],
 // });
 
-
-
-
 window.Pusher = Pusher;
-
-
 window.Echo = new Echo({
     broadcaster: 'pusher',
-    key: "5b813ee681f5422deebc",
-    cluster: "ap2",
+    key: import.meta.env.VITE_PUSHER_APP_KEY,
+    cluster: import.meta.env.VITE_PUSHER_APP_CLUSTER ?? 'mt1',
     forceTLS: true
 });
