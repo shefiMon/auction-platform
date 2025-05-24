@@ -10,6 +10,7 @@ An online auction platform built with modern web technologies, allowing users to
 - Search and filter auctions
 - User dashboard
 - Admin panel
+
 ## Prerequisites
 - PHP >= 8.1
 - MySQL/MariaDB
@@ -52,10 +53,8 @@ php artisan migrate
 php artisan serve
 ```
 
-8. Configure Pusher for real-time features:
-```bash
-In your .env file, set:
-```bash
+8. Configure Pusher for real-time features in your `.env` file:
+```
 BROADCAST_DRIVER=pusher
 PUSHER_APP_ID=your_app_id
 PUSHER_APP_KEY=your_app_key
@@ -63,7 +62,7 @@ PUSHER_APP_SECRET=your_secret_key
 PUSHER_APP_CLUSTER=your_cluster
 ```
 
-9. Configure web socket connection:
+9. Install WebSocket dependencies:
 ```bash
 npm install --save-dev laravel-echo pusher-js
 ```
@@ -76,15 +75,28 @@ npm install --save-dev laravel-echo pusher-js
 ],
 ```
 
-11. Schedule Auction Activation:
+11. Seed the database:
 ```bash
-# Add to App\Console\Kernel.php
+php artisan db:seed
+```
+
+## Test Accounts
+```
+Bidder: bidder@auction.com / password
+Admin: admin@auction.com / password
+```
+
+## Scheduled Tasks
+Add to `App\Console\Kernel.php`:
+```php
 protected function schedule(Schedule $schedule)
 {
     $schedule->command('app:activate-auction')->everyMinute();
 }
+```
 
-# Run the scheduler
+Run the scheduler:
+```bash
 php artisan schedule:work
 ```
 
@@ -97,4 +109,3 @@ Visit `http://localhost:8000` in your web browser.
 3. Commit your changes
 4. Push to the branch
 5. Create a new Pull Request
-
