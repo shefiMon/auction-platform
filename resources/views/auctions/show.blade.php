@@ -9,7 +9,15 @@
                             @if($auction->image)
                                 <img src="{{ Storage::url($auction->image) }}" alt="{{ $auction->title }}" class="w-full h-64 object-cover rounded-lg mb-4">
                             @endif
-
+                            @if($auction->isActive())
+                                <span class="inline-block bg-green-500 text-white px-3 py-1 rounded-full text-xs font-bold mb-4">
+                                    Live
+                                </span>
+                            @else
+                                <span class="inline-block bg-gray-300 text-gray-700 px-3 py-1 rounded-full text-xs font-bold mb-4">
+                                    {{ ucfirst($auction->status) }}
+                                </span>
+                            @endif
                             <!-- Live Stream -->
                             @if($auction->stream_url && $auction->isActive())
                                 <div class="mb-4">
@@ -43,11 +51,20 @@
                                     </div>
                                 @endif
 
+                                 <div class="flex justify-between">
+                                    <span class="text-sm text-gray-500">Starts At:</span>
+                                    <span class="text-sm">{{ $auction->start_time->format('M d, Y H:i') }}</span>
+                                </div>
+                                <div class="flex justify-between">
+                                    <span class="text-sm text-gray-500">Ends At:</span>
+                                    <span class="text-sm">{{ $auction->end_time->format('M d, Y H:i') }}</span>
+                                </div>
+
                                 @if($auction->isActive())
                                     <div class="flex justify-between">
-                                        <span class="text-gray-600">Time Remaining:</span>
+                                        <span class="text-gray-600">Time Left:</span>
                                         <span class="font-bold text-2xl text-red-600" id="countdown-timer">
-                                            {{ gmdate('H:i:s', $auction->timeRemaining()) }}
+                                            {{-- {{ gmdate('H:i:s', $auction->timeRemaining()) }} --}}
                                         </span>
                                     </div>
                                 @endif
@@ -238,11 +255,10 @@
             const hours = Math.floor(diff / (1000 * 60 * 60));
             const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
             const seconds = Math.floor((diff % (1000 * 60)) / 1000);
-
             timer.textContent =
-                hours.toString().padStart(2, '0') + ':' +
-                minutes.toString().padStart(2, '0') + ':' +
-                seconds.toString().padStart(2, '0');
+                hours.toString().padStart(2, '0') + ' hour ' +
+                minutes.toString().padStart(2, '0') + ' min ' +
+                seconds.toString().padStart(2, '0') + ' sec';
         }
 
         function initializeChannels() {

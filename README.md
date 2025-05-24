@@ -7,9 +7,9 @@ An online auction platform built with modern web technologies, allowing users to
 - User authentication and authorization
 - Create and manage auction listings
 - Real-time bidding system
-- Search and filter auctions
-- User dashboard
-- Admin panel
+- User roles (Admin and Bidder)
+    - Admin: Manage users and auctions
+    - Bidder: Place bids
 
 ## Prerequisites
 - PHP >= 8.1
@@ -89,9 +89,12 @@ Admin: admin@auction.com / password
 ## Scheduled Tasks
 Add to `App\Console\Kernel.php`:
 ```php
+php artisan schedule:work       
 protected function schedule(Schedule $schedule)
 {
     $schedule->command('app:activate-auction')->everyMinute();
+    $schedule->command('app:mark-as-completed')->everyMinute();
+    
 }
 ```
 

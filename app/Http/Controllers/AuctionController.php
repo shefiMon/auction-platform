@@ -1,6 +1,7 @@
 <?php
 namespace App\Http\Controllers;
 
+use App\Events\NewAuction;
 use App\Models\Auction;
 use App\Models\Bid;
 use App\Events\NewBid;
@@ -16,7 +17,9 @@ class AuctionController extends Controller
         $auctions = Auction::with(['creator', 'bids.user'])
             ->where('status', 'active')
             ->orWhere('start_time', '>', now())
-            ->orderBy('start_time')
+            ->orderBy('status', 'desc')
+            ->orderBy('current_price', 'desc')
+            ->orderBy('created_at', 'desc')
             ->paginate(12);
 
         return view('auctions.index', compact('auctions'));
@@ -58,7 +61,9 @@ class AuctionController extends Controller
         $validated['created_by'] = Auth::id();
         $validated['current_price'] = $validated['starting_price'];
 
-        Auction::create($validated);
+       $auction = Auction::create($validated);
+
+        broadcast(new NewAuction($auction));
 
         return redirect()->route('auctions.index')
             ->with('success', 'Auction created successfully!');

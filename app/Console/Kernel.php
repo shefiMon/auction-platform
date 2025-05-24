@@ -14,6 +14,7 @@ class Kernel extends ConsoleKernel
     {
         // $schedule->command('inspire')->hourly();
         $schedule->command('app:activate-auction')->everyMinute();
+        $schedule->command('app:mark-as-completed')->everyMinute();
     }
 
     /**
