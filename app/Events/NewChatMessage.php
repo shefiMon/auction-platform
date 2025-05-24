@@ -32,6 +32,8 @@ class NewChatMessage implements ShouldBroadcast
                 'message' => $this->message->message,
                 'user_name' => $this->message->user->name,
                 'created_at' => $this->message->created_at->toISOString(),
+                'diffForHumans' => $this->message->created_at->diffForHumans(),
+
             ]
         ];
     }

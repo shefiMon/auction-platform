@@ -56,11 +56,12 @@
 
                         <!-- Bidding Panel -->
                         <div>
+
                             @if($auction->isActive() && auth()->check() && !auth()->user()->isAdmin())
                                 <div class="bg-gray-50 p-6 rounded-lg mb-6">
                                     <h3 class="font-semibold text-lg mb-4">Place Your Bid</h3>
 
-                                    <form action="{{ route('auctions.bid', $auction) }}" method="POST" id="bid-form">
+                                    <form action="" method="POST" id="bid-form">
                                         @csrf
                                         <div class="mb-4">
                                             <label for="amount" class="block text-sm font-medium text-gray-700">Bid Amount</label>
@@ -81,9 +82,7 @@
                                         </button>
                                     </form>
 
-                                    <p class="text-sm text-gray-500 mt-2">
-                                        Your balance: ${{ number_format(auth()->user()->balance, 2) }}
-                                    </p>
+
                                 </div>
                             @endif
 
@@ -114,7 +113,7 @@
                                         <div class="text-sm">
                                             <span class="font-medium text-blue-600">{{ $message->user->name }}:</span>
                                             <span class="text-gray-700">{{ $message->message }}</span>
-                                            <span class="text-xs text-gray-400 ml-2">{{ $message->created_at->format('H:i') }}</span>
+                                            <span class="text-xs text-gray-400 ml-2">{{ $message->created_at->diffForHumans() }}</span>
                                         </div>
                                     @endforeach
                                 </div>
@@ -144,81 +143,77 @@
     </div>
 
     @push('scripts')
+
     <script>
-        // Initialize Echo for real-time updates
-        window.Echo.channel('auction.{{ $auction->id }}')
-            .listen('NewBid', (e) => {
-                // Update current price
-                document.getElementById('current-price').textContent = ' + parseFloat(e.auction.current_price).toFixed(2);
 
-                // Update minimum bid amount
-                const amountInput = document.getElementById('amount');
-                if (amountInput) {
-                    amountInput.min = parseFloat(e.auction.current_price) + 1;
-                }
+    document.addEventListener('DOMContentLoaded', function() {
+            // Check if Echo is properly initialized
+            if (typeof window.Echo === 'undefined') {
+                console.error('Echo is not initialized. Check your bootstrap.js and Pusher configuration.');
+                return;
+            }
 
-                // Add new bid to list
-                const bidsList = document.getElementById('bids-list');
-                const newBid = document.createElement('div');
-                newBid.className = 'flex justify-between items-center py-2 border-b';
-                newBid.innerHTML = `
-                    <span class="font-medium">${e.bid.user_name}</span>
-                    <div class="text-right">
-                        <div class="font-bold text-green-600">${parseFloat(e.bid.amount).toFixed(2)}</div>
-                        <div class="text-xs text-gray-500">Just now</div>
-                    </div>
-                `;
-                bidsList.insertBefore(newBid, bidsList.firstChild);
+            // Initialize channels
+            initializeChannels();
 
-                // Remove old bids if more than 10
-                while (bidsList.children.length > 10) {
-                    bidsList.removeChild(bidsList.lastChild);
-                }
+            // Setup chat form
+            setupChatForm();
 
-                // Update end time if extended
-                updateCountdown(e.auction.end_time);
-            });
+            // Initialize countdown if auction is active
+            @if($auction->isActive())
+                initializeCountdown();
+            @endif
+    });
 
-        // Listen for chat messages
-        window.Echo.channel('auction.{{ $auction->id }}.chat')
-            .listen('NewChatMessage', (e) => {
-                const chatMessages = document.getElementById('chat-messages');
-                const messageDiv = document.createElement('div');
-                messageDiv.className = 'text-sm';
-                messageDiv.innerHTML = `
-                    <span class="font-medium text-blue-600">${e.message.user_name}:</span>
-                    <span class="text-gray-700">${e.message.message}</span>
-                    <span class="text-xs text-gray-400 ml-2">Just now</span>
-                `;
-                chatMessages.appendChild(messageDiv);
-                chatMessages.scrollTop = chatMessages.scrollHeight;
-            });
+    function initializeChannels() {
+        try {
+            // Auction channel for bids
+            window.Echo.channel('auction.{{ $auction->id }}')
+                .listen('NewBid', (e) => {
+                    updateAuctionUI(e);
+                });
 
-        // Handle chat form submission
-        document.getElementById('chat-form')?.addEventListener('submit', function(e) {
-            e.preventDefault();
+            // Chat channel
+            window.Echo.channel('auction.{{ $auction->id }}.chat')
+                .listen('NewChatMessage', (e) => {
+                    addChatMessage(e.message);
+                });
+        } catch (error) {
+            console.error('Error initializing Echo channels:', error);
+        }
+    }
 
-            const messageInput = document.getElementById('chat-message');
-            const message = messageInput.value.trim();
+    function setupChatForm() {
+        const chatForm = document.getElementById('chat-form');
+        if (chatForm) {
+            chatForm.addEventListener('submit', handleChatSubmit);
+        }
+    }
 
-            if (!message) return;
+    function handleChatSubmit(event) {
+        event.preventDefault();
 
-            fetch('{{ route("auctions.chat", $auction) }}', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
-                },
-                body: JSON.stringify({ message: message })
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    messageInput.value = '';
-                }
-            })
-            .catch(error => console.error('Error:', error));
-        });
+        const messageInput = document.getElementById('chat-message');
+        const message = messageInput.value.trim();
+
+        if (!message) return;
+
+        fetch('{{ route("auctions.chat", $auction) }}', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+            },
+            body: JSON.stringify({ message: message })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                messageInput.value = '';
+            }
+        })
+        .catch(error => console.error('Error:', error));
+    }
 
         // Countdown timer
         let endTime = new Date('{{ $auction->end_time->toISOString() }}');
@@ -249,6 +244,125 @@
                 minutes.toString().padStart(2, '0') + ':' +
                 seconds.toString().padStart(2, '0');
         }
+
+        function initializeChannels() {
+            try {
+                // Auction channel for bids
+                window.Echo.channel('auction.{{ $auction->id }}')
+                    .listen('NewBid', (e) => {
+                        updateAuctionUI(e);
+                    });
+
+                // Chat channel
+                window.Echo.channel('auction.{{ $auction->id }}.chat')
+                    .listen('NewChatMessage', (e) => {
+                        console.log('New chat message received:', e.message);
+                        addChatMessage(e.message);
+                    });
+            } catch (error) {
+                console.error('Error initializing Echo channels:', error);
+            }
+        }
+
+        function addChatMessage(message) {
+            const chatMessages = document.getElementById('chat-messages');
+            const messageDiv = document.createElement('div');
+
+            // Function to check if a string contains only emoji
+            const isEmoji  =/^[\u{1F600}-\u{1F64F}\u{1F300}-\u{1F5FF}\u{1F680}-\u{1F6FF}\u{1F700}-\u{1F77F}\u{1F780}-\u{1F7FF}\u{1F800}-\u{1F8FF}\u{1F900}-\u{1F9FF}\u{1FA00}-\u{1FA6F}\u{1FA70}-\u{1FAFF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}]+$/u.test(message.message.trim());
+
+
+              messageDiv.className = `text-sm ${isEmoji ? 'emoji-message' : ''}`;
+
+            messageDiv.innerHTML = `
+                <span class="font-medium text-blue-600">${message.user_name}:</span>
+                <span class="text-gray-700">${message.message}</span>
+                <span class="text-xs text-gray-400 ml-2">${message.diffForHumans}</span>
+            `;
+            chatMessages.appendChild(messageDiv);
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+              if (isEmoji) {
+        setTimeout(() => {
+            const emojiElement = document.createElement('div');
+            emojiElement.className = 'emoji-fly';
+            emojiElement.textContent = message.message;
+            emojiElement.style.left = `${Math.random() * 80 + 10}%`;
+            messageDiv.appendChild(emojiElement);
+
+            // Remove the element after animation completes
+            setTimeout(() => {
+                emojiElement.remove();
+            }, 2000);
+        }, 100);
+    }
+        }
+
+        function updateAuctionUI(e){
+            console.log('New bid received:', e);
+
+                // Update current price
+              document.getElementById('current-price').textContent = `$${parseFloat(e.auction.current_price).toFixed(2)}`;
+
+                // Update minimum bid amount
+                const amountInput = document.getElementById('amount');
+                if (amountInput) {
+                    amountInput.min = parseFloat(e.auction.current_price) + 1;
+                }
+
+                // Add new bid to list
+                const bidsList = document.getElementById('bids-list');
+                const newBid = document.createElement('div');
+                newBid.className = 'flex justify-between items-center py-2 border-b';
+                newBid.innerHTML = `
+                    <span class="font-medium">${e.bid.user_name}</span>
+                    <div class="text-right">
+                        <div class="font-bold text-green-600">${parseFloat(e.bid.amount).toFixed(2)}</div>
+                        <div class="text-xs text-gray-500">Just now</div>
+                    </div>
+                `;
+                bidsList.insertBefore(newBid, bidsList.firstChild);
+
+                // Remove old bids if more than 10
+                while (bidsList.children.length > 10) {
+                    bidsList.removeChild(bidsList.lastChild);
+                }
+
+                // Update end time if extended
+                updateCountdown(e.auction.end_time);
+        }
+
+        function initializeCountdown() {
+            setInterval(updateCountdown, 1000);
+        }
+
+        // Handle bidding form submission
+        document.getElementById('bid-form')?.addEventListener('submit', function(e) {
+            e.preventDefault();
+            const amount = document.getElementById('amount').value;
+
+            fetch('{{ route("auctions.bid", $auction) }}', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+                },
+                body: JSON.stringify({ amount: amount })
+            })
+            .then(response => response.json())
+            .then(data => {
+                console.log('Bid response:', data);
+                if (data.success) {
+                    document.getElementById('amount').value = '';
+                } else {
+                    alert(data.message || 'Error placing bid');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Error placing bid');
+            });
+        });
+
 
         @if($auction->isActive())
             setInterval(updateCountdown, 1000);

@@ -71,12 +71,12 @@ class AuctionController extends Controller
         ]);
 
         if (!$auction->isActive()) {
-            return back()->withErrors('This auction is no longer active.');
+            return response()->json([
+                'success' => false,
+                'message' => 'This auction is no longer active.',
+            ], 400);
         }
 
-        if (Auth::user()->balance < $request->amount) {
-            return back()->withErrors('Insufficient balance.');
-        }
 
         DB::transaction(function () use ($request, $auction) {
             // Check if auction needs time extension
@@ -102,6 +102,11 @@ class AuctionController extends Controller
             broadcast(new NewBid($bid));
         });
 
-        return back()->with('success', 'Bid placed successfully!');
+        return response()->json([
+            'success' => true,
+            'message' => 'Bid placed successfully!',
+            'new_price' => $auction->current_price,
+            'time_remaining' => $auction->timeRemaining(),
+        ]);
     }
 }

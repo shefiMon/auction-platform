@@ -7,14 +7,7 @@
 
         </div>
 
-            @auth
 
-                @if(auth()->user()->isAdmin())
-                    <a href="{{ route('admin.auctions.create') }}" class="bg-blue-500 hover:bg-blue-700 text-blue font-bold py-2 px-4 rounded">
-                        Create Auction
-                    </a>
-                @endif
-            @endauth
     </x-slot>
 
     <div class="py-12">
@@ -75,24 +68,33 @@
     @push('scripts')
     <script>
         // Update countdown timers
+        function updateTimer(timerId, endTimeStr) {
+            const timerElement = document.getElementById(timerId);
+            if (!timerElement) return;
+
+            const endTime = new Date(endTimeStr);
+            const now = new Date();
+            const diff = Math.max(0, endTime - now);
+
+            if (diff === 0) {
+                timerElement.textContent = 'Auction ended';
+                return;
+            }
+
+            const hours = Math.floor(diff / (1000 * 60 * 60));
+            const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+            const seconds = Math.floor((diff % (1000 * 60)) / 1000);
+
+            timerElement.textContent =
+                hours.toString().padStart(2, '0') + ':' +
+                minutes.toString().padStart(2, '0') + ':' +
+                seconds.toString().padStart(2, '0');
+        }
+
         setInterval(function() {
             @foreach($auctions as $auction)
                 @if($auction->isActive())
-                    const timer{{ $auction->id }} = document.getElementById('timer-{{ $auction->id }}');
-                    const endTime = new Date('{{ $auction->end_time->toISOString() }}');
-                    const now = new Date();
-                    const diff = Math.max(0, endTime - now);
-
-                    const hours = Math.floor(diff / (1000 * 60 * 60));
-                    const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
-                    const seconds = Math.floor((diff % (1000 * 60)) / 1000);
-
-                    if (timer{{ $auction->id }}) {
-                        timer{{ $auction->id }}.textContent =
-                            hours.toString().padStart(2, '0') + ':' +
-                            minutes.toString().padStart(2, '0') + ':' +
-                            seconds.toString().padStart(2, '0');
-                    }
+                    updateTimer('timer-{{ $auction->id }}', '{{ $auction->end_time->toISOString() }}');
                 @endif
             @endforeach
         }, 1000);

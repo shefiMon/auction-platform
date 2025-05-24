@@ -1,3 +1,28 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+
+/* Emoji animation styles */
+@keyframes flyEmoji {
+  0% {
+    transform: translateY(0) scale(1);
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(-100px) scale(1.5);
+    opacity: 0;
+  }
+}
+
+.emoji-message {
+  position: relative;
+}
+
+.emoji-fly {
+  position: absolute;
+  animation: flyEmoji 2s ease-out forwards;
+  font-size: 2rem;
+  z-index: 10;
+  pointer-events: none;
+}

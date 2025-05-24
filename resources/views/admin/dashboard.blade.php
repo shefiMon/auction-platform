@@ -8,6 +8,7 @@
     <div class="py-12">
         <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
             <!-- Statistics Cards -->
+
             <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
                 <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
                     <div class="p-6">
@@ -52,6 +53,7 @@
                             <div class="ml-4">
                                 <p class="text-sm font-medium text-gray-500">Total Users</p>
                                 <p class="text-2xl font-semibold text-gray-900">{{ $stats['total_users'] }}</p>
+                                <a href="{{ route('admin.users') }}" class="text-sm text-blue-600 hover:text-blue-800">(View All)</a>
                             </div>
                         </div>
                     </div>
@@ -79,7 +81,12 @@
                 <div class="p-6">
                     <div class="flex justify-between items-center mb-4">
                         <h3 class="text-lg font-semibold">Recent Auctions</h3>
-                        <a href="{{ route('admin.auctions') }}" class="text-blue-600 hover:text-blue-800">View All</a>
+                        <div class="flex items-center space-x-4">
+                            <a href="{{ route('admin.auctions.create') }}" class="text-blue-600 hover:text-blue-800">
+                                Create
+                            </a>
+                            <a href="{{ route('admin.auctions') }}" class="text-blue-600 hover:text-blue-800">View All</a>
+                        </div>
                     </div>
 
                     <div class="overflow-x-auto">
