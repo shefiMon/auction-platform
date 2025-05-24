@@ -57,7 +57,6 @@ php artisan serve
 In your .env file, set:
 ```bash
 BROADCAST_DRIVER=pusher
-```
 PUSHER_APP_ID=your_app_id
 PUSHER_APP_KEY=your_app_key
 PUSHER_APP_SECRET=your_secret_key
