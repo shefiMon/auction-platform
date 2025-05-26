@@ -51,6 +51,7 @@ php artisan migrate
 7. Start the development server:
 ```bash
 php artisan serve
+npm run dev
 ```
 
 8. Configure Pusher for real-time features in your `.env` file:
